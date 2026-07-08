@@ -32,8 +32,8 @@ import pydantic
 import streamlit as st
 
 AVAILABLE_MODELS = [
-    "gemini-2.0-flash-lite",
-    "gemini-2.0-flash",
+    "gemini-3.5-flash",
+    "gemini-3.1-flash-lite"
 ]
 
 _SAFETY_SETTINGS = {
