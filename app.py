@@ -106,34 +106,44 @@ if st.session_state.operation_mode == "Generate Descriptions":
     prompt_llm_role = st.text_input(
         "Provide a role to the LLM",
         value=(
-            "You are an expert digital marketer. Your job is to write creative"
-            " ads based on the provided data."
+            "You are the Lead E-commerce Copywriter for Ferns N Petals (FNP). Your goal is to write clear, "
+            "scannable, and informative product descriptions that balance light emotional resonance with strict "
+            "factual clarity. The customer must know exactly what the product is, its size/specifications, and its "
+            "presentation within the first glance."
         ),
     )
     prompt_llm_guidelines = st.text_area(
         "Provide any guidelines that the LLM should consider",
         height=150,
         value=(
-            "###GUIDELINES###\n- Always be truthful and present factual"
-            " information only.\n- Only use the provided features for"
-            " generating the text.\n- Structure your output in three sections,"
-            " each with its headline. First section should give a general"
-            " overview, second should discuss the materials and third should"
-            " provide any usage or styling guidelines.\n- Use HTML formatting."
-            " Section headings should be <h2>. The text following should be in"
-            " <p> blocks. Any keywords that could convince a user about"
-            " purchasing our product should be highlighted with <strong>."
+            "###GUIDELINES###\n"
+            "1. IMMEDIATE PRODUCT IDENTIFICATION (SEO): You must explicitly mention the exact Product Name in the first sentence. "
+            "Never hide the product behind vague poetic descriptors (e.g., do not substitute \"Chocolate Truffle Cake\" with \"decadent dessert\").\n"
+            "2. VERSATILE GIFTING CONTEXTS: Do not pigeonhole products into narrow, highly specific scenarios. Keep the gifting intent broad, "
+            "natural, and highly inclusive of various milestones like birthdays, anniversaries, expressions of gratitude, or celebrations.\n"
+            "3. HARD MARKETING-FLUFF BAN: Completely eliminate abstract, over-the-top marketing clichés. Zero tolerance for: \"ignite romance,\" "
+            "\"intimate candlelit dinners,\" \"shared moments of pure joy,\" \"sophisticated palates,\" \"personal sanctuary,\" \"understated luxury,\" "
+            "\"breathtaking gesture,\" or \"perfect surprise.\"\n"
+            "4. GRAMMATICAL PRECISION: Ensure absolute flawless grammar throughout. Pay strict attention to indefinite articles before adjectives "
+            "(e.g., always use \"An elegant presentation box\" instead of \"A elegant presentation box\").\n\n"
+            "To ensure sequential products do not read identically, vary your sentence transitions and completely diversify the final sentence focus.\n"
+            "- COMPOSITION: Output must be a SINGLE, continuous paragraph.\n"
+            "- FORMAT: Clean, raw plain text only. No markdown asterisks (**) or HTML tags.\n"
+            "- LENGTH: Exactly 3 sentences. Hard maximum of 50 words total.\n\n"
+            "###THREE-SENTENCE FUNCTIONAL BLUEPRINT###\n"
+            "* SENTENCE 1 (The Clear Opening): State the exact Product Name immediately and pair it with a natural, versatile milestone or celebration context. (Do NOT start with \"Welcome to\" or \"Celebrate life's\").\n"
+            "* SENTENCE 2 (The Factual Breakdown): Detail the exact specifications (weights, counts, ingredients, or sizes using clear numbers like \"6\" or \"500g\") in a crisp narrative. Never use the word \"features\", \"contains\", or \"includes\".\n"
+            "* SENTENCE 3 (The Diverse Presentation Close): Complete the description by highlighting the premium packaging, the sensory freshness, or the immediate display aesthetic.\n"
+            "* SENTENCE 3 CRITICAL BAN: You are strictly forbidden from using the words \"arrives\", \"delivered\", \"delivery\", \"receive\", or \"recipient\" in this final sentence. Focus entirely on the object's presentation, structural protection, or visual beauty."
         ),
     )
 
     examples_df = pd.DataFrame([{
-        "input": "feature 1: value 1, feature 2: value 2, ..., feature n",
+        "input": "Product Name: Chocolate Truffle Cake Half Kg, Product Details: 500g, eggless, round shape, chocolate ganache glaze, chocolate swirls decoration",
         "output": (
-            "<h2> Lorem ipsum dolor sit amet</h2>\n<p> Lorem ipsum dolor sit"
-            " amet, consectetur adipiscing elit, sed do eiusmod tempor"
-            " incididunt ut labore et dolore magna aliqua. Ut enim ad minim"
-            " veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip"
-            " ex ea commodo consequat.</p>"
+            "Make any birthday or milestone celebration memorable with our Chocolate Truffle Cake Half Kg. "
+            "This round, 500g eggless cake is crafted with a smooth chocolate ganache glaze and topped with handcrafted chocolate swirls. "
+            "A glossy finish and elegant piping ensure this dessert stands out as a stunning centerpiece on any party table."
         ),
     }])
     prompt_action = st.text_input(
@@ -206,7 +216,25 @@ if st.session_state.operation_mode == "Generate Descriptions":
 
       st.write("**Scoring**")
       scoring_template = None  # Variable so pylint: disable=C0103
-      scoring_df = pd.DataFrame(columns=["Criterion", "Points"])
+      default_scoring_data = [
+          {
+              "Criterion": "CMS Layout & Length Compliance: Must be a single continuous paragraph of exactly 3 sentences. Hard maximum of 60 words total. Score 0/30 if markdown asterisks (**) or HTML tags are present.",
+              "Points": 30
+          },
+          {
+              "Criterion": "Brand Voice Safety: Confirm zero presence of these specific banned cliches: 'breathtaking gesture of love,' 'ethereal,' 'symphony of flavors,' or 'magical aura.'",
+              "Points": 30
+          },
+          {
+              "Criterion": "Zero-Hallucination SKU Accuracy: Ensure the copy naturally includes the exact Product Name in the first sentence for SEO mapping, and that the physical specifications (like grams, counts, or sizes) match logically.",
+              "Points": 25
+          },
+          {
+              "Criterion": "Gifting Focus & Presentation Close: Gifting Intent Rule: Accept either a single specific occasion OR a versatile mix of milestone celebrations (e.g., birthdays, anniversaries, housewarmings). Do not penalize versatile gifting options. Presentation Close Rule: The final sentence must highlight how the product is presented (physical packaging like boxes, wrapping, ribbons, bows OR premium product display elements like elegant piping, glossy finishes, decorative river pebbles). If met, award full points (15/15) and output Passing: Y.",
+              "Points": 15
+          }
+      ]
+      scoring_df = pd.DataFrame(default_scoring_data)
       scoring_criteria = st.data_editor(
           data=scoring_df,
           column_config={
@@ -228,7 +256,13 @@ if st.session_state.operation_mode == "Generate Descriptions":
           use_container_width=True,
           hide_index=True,
       )
-      scoring_prompt = ""
+      scoring_prompt_lines = []
+      if not scoring_criteria.empty:
+          for _, row in scoring_criteria.iterrows():
+              if pd.notna(row['Criterion']) and pd.notna(row['Points']):
+                  scoring_prompt_lines.append(f"- {row['Criterion']} | Weight: {row['Points']} Points")
+      scoring_prompt = "\n".join(scoring_prompt_lines)
+        
       scoring_total_points_col, passing_score_col = st.columns(2)
       scoring_total_points = scoring_total_points_col.number_input(
           "Total available points",
