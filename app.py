@@ -268,7 +268,7 @@ if st.session_state.operation_mode == "Generate Descriptions":
           "Total available points",
           0,
           1000,
-          value=0,
+          value=100,
           help=(
               "Highest score a description can achieve. All descriptions start"
               " with this score and lose points if they fail a criterion."
@@ -278,7 +278,7 @@ if st.session_state.operation_mode == "Generate Descriptions":
           "Minimum score required to pass",
           -1000,
           1000,
-          value=0,
+          value=95,
           help=(
               "Minimum score required for a description to pass a quality"
               " check."
